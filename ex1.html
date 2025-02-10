@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>MatchCard - Welcome</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* Tata letak dasar */
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .container { text-align: center; }
+    .welcome-container { margin-top: 20px; }
+    .game-choice {
+      cursor: pointer;
+      display: inline-block;
+      padding: 20px;
+      margin: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: #ddd;
+    }
+    .inputContainer { margin-top: 20px; }
+    input, button { padding: 10px; font-size: 1em; margin: 5px; }
+    /* Card Instruction di kiri */
+    .instruction {
+      position: absolute;
+      top: 35%;
+      left: 10%;
+      background: #fff;
+      color: #000;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 250px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Card Instruction -->
+  <div class="instruction">
+    <h2>Instruction</h2>
+    <p>1. Masukkan nama pemain.</p>
+    <p>2. Pilih mode permainan.</p>
+    <p>3. Pilih tingkat kesulitan bot (jika vs Bot).</p>
+    <p>4. Klik Play untuk mulai.</p>
+  </div>
+
+  <div class="container">
+    <h1>Welcome to MatchCard</h1>
+    <div class="welcome-container">
+      <div class="game-choice pvb">Player vs Bot</div>
+      <div class="game-choice pvp">Player vs Player</div>
+    </div>
+    <div class="inputContainer"></div>
+  </div>
+
+  <script>
+    const pvb = document.querySelector(".pvb"),
+          pvp = document.querySelector(".pvp"),
+          inputContainer = document.querySelector(".inputContainer");
+
+    // Mode Player vs Bot (satu input) dengan pilihan bot difficulty
+    pvb.onclick = () => {
+      inputContainer.innerHTML = `
+        <input id="name" placeholder="Username"><br>
+        <label>
+          <input type="radio" name="botDiff" value="easy" checked> Easy
+        </label>
+        <label>
+          <input type="radio" name="botDiff" value="hard"> Hard
+        </label><br>
+        <button id="play" disabled>Play</button>`;
+      const name = document.getElementById("name"),
+            play = document.getElementById("play");
+      name.onkeyup = () => play.disabled = !name.value.trim();
+      play.onclick = () => {
+        if(name.value.trim()){
+          localStorage.setItem("player1name", name.value.trim());
+          localStorage.setItem("player1Score", 0);
+          // Simpan tingkat kesulitan bot
+          const botDiff = document.querySelector('input[name="botDiff"]:checked').value;
+          localStorage.setItem("botDifficulty", botDiff);
+          window.location.href = "game.html";
+        }
+      };
+    };
+
+    // Mode Player vs Player (dua input)
+    pvp.onclick = () => {
+      inputContainer.innerHTML = `
+        <input id="name1" placeholder="Player 1"><br>
+        <input id="name2" placeholder="Player 2"><br>
+        <button id="play" disabled>Play</button>`;
+      const name1 = document.getElementById("name1"),
+            name2 = document.getElementById("name2"),
+            play = document.getElementById("play");
+      const check = () => play.disabled = !(name1.value.trim() && name2.value.trim());
+      name1.onkeyup = name2.onkeyup = check;
+      play.onclick = () => {
+        if(name1.value.trim() && name2.value.trim()){
+          localStorage.setItem("player1name", name1.value.trim());
+          localStorage.setItem("player2name", name2.value.trim());
+          localStorage.setItem("player1Score", 0);
+          localStorage.setItem("player2Score", 0);
+          window.location.href = "game.html";
+        }
+      };
+    };
+  </script>
+</body>
+</html>

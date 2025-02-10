@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>MatchCard - Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    .scoreboard {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .scoreboard span {
+      padding: 5px 10px;
+      border-radius: 5px;
+      margin: 0 10px;
+      font-weight: bold;
+    }
+    /* Indikator warna: Player (biru) dan Bot/Player 2 (merah) */
+    #score1 { background: blue; color: white; } 
+    #score2 { background: red; color: white; }
+    /* Saat aktif, beri border highlight */
+    #score1.active,
+    #score2.active { border: 5px solid black; }
+    
+    .game {
+      display: grid;
+      grid-template-columns: repeat(6, 80px);
+      grid-gap: 5px;
+      justify-content: center;
+    }
+    .card {
+      width: 80px;
+      height: 80px;
+      background: #ccc;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+    }
+    .card.flipped { transform: rotateY(180deg); }
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .card-front { background: #333; color: #fff; }
+    .card-back { background: #fff; color: #000; transform: rotateY(180deg); }
+  </style>
+</head>
+<body>
+  <div class="scoreboard">
+    <span id="score1"></span>
+    <span id="score2"></span>
+  </div>
+  <div class="game" id="game"></div>
+  
+  <script>
+    // --- Setup Mode ---
+    // Jika player2name tidak ada, mode = Player vs Bot.
+    const player1 = localStorage.getItem("player1name") || "Player 1";
+    const player2 = localStorage.getItem("player2name"); // Jika null, mode vs Bot
+    const twoPlayers = !!player2;
+    // Skor: jika mode vs Bot, skor bot disimpan di "botScore"
+    let score1 = parseInt(localStorage.getItem("player1Score")) || 0;
+    let score2 = twoPlayers
+                 ? parseInt(localStorage.getItem("player2Score")) || 0
+                 : parseInt(localStorage.getItem("botScore")) || 0;
+    // Untuk mode vs Bot, gunakan isHumanTurn (true = giliran player, false = giliran bot)
+    let isHumanTurn = true;
+    // Untuk mode PvP, gunakan currentPlayer (1 atau 2)
+    let currentPlayer = 1;
+    let matchesFound = 0;
+
+    // --- Sound Effects (ganti src sesuai kebutuhan) ---
+    const flipSound = new Audio();      flipSound.src = "/assets/flip.mp3";
+    const matchSound = new Audio();     matchSound.src = "/assets/match.mp3";
+    const noMatchSound = new Audio();   noMatchSound.src = "/assets/nomatch.mp3";
+
+    // --- Tampilkan Skor dan Indikator Giliran ---
+    const score1El = document.getElementById("score1");
+    const score2El = document.getElementById("score2");
+    function updateScoreboard() {
+      score1El.textContent = player1 + ": " + score1;
+      score2El.textContent = (twoPlayers ? player2 : "Bot") + ": " + score2;
+      // Update indikator aktif (border highlight)
+      if (twoPlayers) {
+        if (currentPlayer === 1) {
+          score1El.classList.add("active");
+          score2El.classList.remove("active");
+        } else {
+          score2El.classList.add("active");
+          score1El.classList.remove("active");
+        }
+      } else {
+        if (isHumanTurn) {
+          score1El.classList.add("active");
+          score2El.classList.remove("active");
+        } else {
+          score2El.classList.add("active");
+          score1El.classList.remove("active");
+        }
+      }
+    }
+    updateScoreboard();
+
+    // --- Buat Kartu ---
+    const emojis = [
+      "😀","😁","😂","🤣","🤨","😄","😅","😆",
+      "😉","😊","😋","😎","😍","😘","🥰"
+    ];
+    // Duplikat dan acak kartu
+    // let cardsData = [...emojis, ...emojis].sort(() => Math.random()-0.5);
+    let cardsData = [...emojis, ...emojis]        
+    const gameEl = document.getElementById("game");
+    let firstCard = null, secondCard = null, lock = false;
+    function createCard(emoji) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.emoji = emoji;
+      const front = document.createElement("div");
+      front.className = "card-face card-front";
+      front.textContent = "?";
+      const back = document.createElement("div");
+      back.className = "card-face card-back";
+      back.textContent = emoji;
+      card.appendChild(front);
+      card.appendChild(back);
+      card.addEventListener("click", onCardClick);
+      return card;
+    }
+    cardsData.forEach(e => gameEl.appendChild(createCard(e)));
+
+    // --- Logika Game ---
+    function onCardClick() {
+      // Pada mode vs Bot, pemain hanya dapat klik saat isHumanTurn = true.
+      if (lock || (!twoPlayers && !isHumanTurn)) return;
+      if (this.classList.contains("flipped")) return;
+      flipCard(this);
+      if (!firstCard) { firstCard = this; return; }
+      secondCard = this;
+      lock = true;
+      setTimeout(checkMatch, 500);
+    }
+
+    function flipCard(card) {
+      card.classList.add("flipped");
+      flipSound.play();
+    }
+    function unflipCard(card) {
+      card.classList.remove("flipped");
+    }
+    function resetSelection() { firstCard = null; secondCard = null; lock = false; }
+
+    function checkMatch() {
+      if (firstCard.dataset.emoji === secondCard.dataset.emoji) {
+        matchSound.play();
+        if (twoPlayers) {
+          if (currentPlayer === 1) {
+            score1++;
+            localStorage.setItem("player1Score", score1);
+          } else {
+            score2++;
+            localStorage.setItem("player2Score", score2);
+          }
+        } else {
+          if (isHumanTurn) {
+            score1++; 
+            localStorage.setItem("player1Score", score1);
+          } else {
+            score2++;
+            localStorage.setItem("botScore", score2);
+          }
+        }
+        updateScoreboard();
+        matchesFound++;
+        firstCard.removeEventListener("click", onCardClick);
+        secondCard.removeEventListener("click", onCardClick);
+        resetSelection();
+        if (document.querySelectorAll(".card.flipped").length === cardsData.length)
+          setTimeout(endGame, 1000);
+        // if (!twoPlayers) {
+        //     isHumanTurn = !isHumanTurn;
+        // } else { 
+        //     currentPlayer = (currentPlayer === 1) ? 2 : 1;
+        // }
+        // updateScoreboard();
+        lock = false;
+      } else {
+        noMatchSound.play();
+        setTimeout(() => {
+          unflipCard(firstCard);
+          unflipCard(secondCard);
+          if (!twoPlayers && localStorage.getItem("botDifficulty") === "hard") {
+            if (isHumanTurn) {
+              score1 = Math.max(0, score1 - 1);
+              localStorage.setItem("player1Score", score1);
+            } else {
+              score2 = Math.max(0, score2 - 1);
+              localStorage.setItem("botScore", score2);
+            }
+          }
+          resetSelection();
+          if (twoPlayers) {
+            currentPlayer = (currentPlayer === 1) ? 2 : 1;
+          } else {
+            isHumanTurn = !isHumanTurn;
+            if (!isHumanTurn) setTimeout(botTurn, 600);
+          }
+          updateScoreboard();
+          lock = false;
+        }, 600);
+      }
+    }
+
+    // --- Bot Turn (mode vs Bot) ---
+    function botTurn() {
+      let available = Array.from(document.querySelectorAll(".card"))
+                        .filter(c => !c.classList.contains("flipped"));
+      if (available.length < 2) return;
+      let idx1 = Math.floor(Math.random() * available.length);
+      let card1 = available[idx1];
+      available.splice(idx1, 1);
+      let card2 = available[Math.floor(Math.random() * available.length)];
+      flipCard(card1); firstCard = card1;
+      setTimeout(() => {
+        flipCard(card2); secondCard = card2;
+        lock = true;
+        setTimeout(checkMatch, 600);
+      }, 600);
+    }
+
+    function endGame() {
+      alert("Game Over!\n" + player1 + ": " + score1 + "\n" + (twoPlayers ? player2 : "Bot") + ": " + score2);
+      localStorage.clear()
+      window.location.href='/'
+    }
+  </script> 
+</body>
+</html>
