@@ -1,106 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GG-Match</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GG-Match</title>
+  <style>
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      font-family: sans-serif;
+      background: #f0f0f0;
+    }
+    /* Bagian utama (form game dan instruksi) */
+    .container { text-align: center; }
+    .gameChoice {
+      margin: 10px;
+      background: #ccc;
+      display: inline-block;
+      padding: 10px;
+      cursor: pointer;
+    }
+    input, button { padding: 10px; margin: 10px; }
+    .instruction {
+      position: absolute;
+      top: 35%;
+      left: 10%;
+    }
+    /* Leaderboard: disederhanakan dan minimalis */
+    .leaderboard {
+      position: absolute;
+      right: 10%;
+      top: 35%;
+      width: 300px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: #fff;
+    }
+    .leaderboard h1 { text-align: center; margin: 0 0 10px; }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 5px;
+      border: none;
+      background: #ccc;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .tabs button.active {
+      background: #aaa;
+      color: #fff;
+    }
+    .table-container table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table-container th,
+    .table-container td {
+      border: 1px solid #333;
+      padding: 5px;
+      text-align: center;
+    }
+  </style>
 </head>
-<style>
-    body{
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-    }
-    .container{text-align: center;}
-    .gameChoice{
-        margin: 10px;
-        background: #ccc;
-        display: inline-block;
-        padding: 10px;
-        cursor: pointer;
-    }
-    input,button{
-        padding: 10px;
-        margin: 10px;
-    }
-    .instruction{
-        position: absolute;
-        top: 35%;
-        left: 10%;
-    }
-</style>
 <body>
-    <div class="instruction">
-        <h2>Instruction</h2>
-        <p>1. asdfdfa </p>
-        <p>2. sfasdfasdfas </p>
-        <p>3. sadafasdf </p>
-        <p>4. asdfasfd</p>
+  <!-- Instruction -->
+  <div class="instruction">
+    <h2>Instruction</h2>
+    <p>1. asdfdfa</p>
+    <p>2. sfasdfasdfas</p>
+    <p>3. sadafasdf</p>
+    <p>4. asdfasfd</p>
+  </div>
+
+  <!-- Game Input -->
+  <div class="container">
+    <div class="welcomeContainer">
+      <h2>Welcome to GG-Match</h2>
+      <div class="gameChoice pvb">player vs bot</div>
+      <div class="gameChoice pvp">player vs player</div>
     </div>
-    <div class="container">
-        <div class="welcomeContainer">
-            <h2>Welcome to GG-Match</h2>
-            <div class="gameChoice pvb">player vs bot</div>
-            <div class="gameChoice pvp">player vs player</div>
-        </div>
-        <div class="inputContainer"></div>
+    <div class="inputContainer"></div>
+  </div>
+
+  <!-- Leaderboard (Minimalis) -->
+  <div class="leaderboard">
+    <h1>Leaderboard</h1>
+    <!-- Mode Tabs: PvB dan PvP -->
+    <div class="tabs" id="modeTabs">
+      <button data-mode="pvb" class="active">PvB</button>
+      <button data-mode="pvp">PvP</button>
     </div>
-    <script>
-        const pvb = document.querySelector('.pvb')
-        const pvp = document.querySelector('.pvp')
-        const inputContainer = document.querySelector('.inputContainer')
+    <!-- Difficulty Tabs (hanya untuk PvB) -->
+    <div class="tabs" id="diffTabs">
+      <button data-diff="easy" class="active">Easy</button>
+      <button data-diff="hard">Hard</button>
+    </div>
+    <!-- Container Tabel Leaderboard -->
+    <div class="table-container" id="tableContainer"></div>
+  </div>
 
-        pvb.onclick = () => {
-            inputContainer.innerHTML=`
-                <input id="name" placeholder="username"><br>
-                <label>
-                    <input type="radio" name="e" value="easy" checked>Easy
-                </label>
-                <label>
-                    <input type="radio" name="e" value="hard">Hard
-                </label><br>
-                <button id="play" disabled>play
-                </button>
-            `
-            const name=document.getElementById('name'),
-                  play=document.getElementById('play')
+  <script>
+    // === Bagian Game Input ===
+    const pvb = document.querySelector('.pvb');
+    const pvp = document.querySelector('.pvp');
+    const inputContainer = document.querySelector('.inputContainer');
 
-            name.onkeyup = () => play.disabled=!name.value.trim()
-            play.onclick = () => {
-                if(name.value.trim()){
-                    localStorage.setItem('player1name', name.value.trim())
-                    localStorage.setItem('player1score', 0)
-                    const botDiff=document.querySelector('input[type="radio"]:checked').value
-                    localStorage.setItem('botDiff', botDiff)
-                    window.location.href='game.html'
-                }
-            }
+    // Event: Player vs Bot
+    pvb.onclick = () => {
+      inputContainer.innerHTML = `
+        <input id="name" placeholder="username"><br>
+        <label>
+          <input type="radio" name="e" value="easy" checked>Easy
+        </label>
+        <label>
+          <input type="radio" name="e" value="hard">Hard
+        </label><br>
+        <button id="play" disabled>play</button>
+      `;
+      const name = document.getElementById('name'),
+            play = document.getElementById('play');
+      name.onkeyup = () => play.disabled = !name.value.trim();
+      play.onclick = () => {
+        if(name.value.trim()){
+          localStorage.removeItem('player2name');
+          localStorage.removeItem('player2score');
+          localStorage.setItem('player1name', name.value.trim());
+          localStorage.setItem('player1score', 0);
+          const botDiff = document.querySelector('input[type="radio"]:checked').value;
+          localStorage.setItem('botDiff', botDiff);
+          window.location.href = 'game.html';
         }
-        pvp.onclick = () => {
-            inputContainer.innerHTML=`
-                <input id="name1" placeholder="player 1"><br>
-                <input id="name2" placeholder="player 2"><br>
-                <button id="play" disabled>play
-                </button>
-            `
-            const name1=document.getElementById('name1'),
-                  name2=document.getElementById('name2'),
-                  play=document.getElementById('play')
-            const check = () => play.disabled=!(name1.value.trim()&&name2.value.trim())
-            name1.onkeyup=name2.onkeyup=check
-            play.onclick = () => {
-                if(name1.value.trim()&&name2.value.trim()){
-                    localStorage.setItem('player1name', name1.value.trim())
-                    localStorage.setItem('player1score', 0)
-                    localStorage.setItem('player2name', name2.value.trim())
-                    localStorage.setItem('player2score', 0)
-                    window.location.href='game.html'
-                }
-            }
-        }
+      }
+    };
 
-    </script>
+    // Event: Player vs Player
+    pvp.onclick = () => {
+      inputContainer.innerHTML = `
+        <input id="name1" placeholder="player 1"><br>
+        <input id="name2" placeholder="player 2"><br>
+        <button id="play" disabled>play</button>
+      `;
+      const name1 = document.getElementById('name1'),
+            name2 = document.getElementById('name2'),
+            play = document.getElementById('play');
+      const check = () => play.disabled = !(name1.value.trim() && name2.value.trim());
+      name1.onkeyup = name2.onkeyup = check;
+      play.onclick = () => {
+        if(name1.value.trim() && name2.value.trim()){
+          localStorage.removeItem('botDiff');
+          localStorage.removeItem('botScore');
+          localStorage.setItem('player1name', name1.value.trim());
+          localStorage.setItem('player1score', 0);
+          localStorage.setItem('player2name', name2.value.trim());
+          localStorage.setItem('player2score', 0);
+          window.location.href = 'game.html';
+        }
+      }
+    };
+
+    let mode = 'pvb', diff = 'easy';
+    const tableContainer = document.getElementById('tableContainer');
+    const modeButtons = document.querySelectorAll('#modeTabs button');
+    const diffButtons = document.querySelectorAll('#diffTabs button');
+
+    function renderTable(data) {
+      if (!data || data.length === 0) {
+        tableContainer.innerHTML = "<p>No player played</p>";
+        return;
+      }
+      let html = `<table><tr><th>No</th><th>Name</th><th>Score</th></tr>`;
+      data.forEach((player, index) => {
+        html += `<tr>
+                   <td>${index + 1}</td>
+                   <td>${player.name}</td>
+                   <td>${player.score}</td>
+                 </tr>`;
+      });
+      html += "</table>";
+      tableContainer.innerHTML = html;
+    }
+
+    // Fungsi untuk mengupdate leaderboard berdasarkan mode dan difficulty
+    function updateLeaderboard() {
+      const lb = JSON.parse(localStorage.getItem('leaderboard')) || {};
+      const data = mode === 'pvb'
+                    ? (lb.pvb && lb.pvb[diff] ? lb.pvb[diff] : [])
+                    : (lb.pvp || []);
+      renderTable(data.sort((a,b) => b.score - a.score));
+    }
+
+    // Event untuk tombol mode (PvB / PvP)
+    modeButtons.forEach(btn => {
+      btn.onclick = () => {
+        mode = btn.dataset.mode;
+        modeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('diffTabs').style.display = mode === 'pvb' ? 'flex' : 'none';
+        updateLeaderboard();
+      }
+    });
+
+    // Event untuk tombol difficulty (Easy / Hard)
+    diffButtons.forEach(btn => {
+      btn.onclick = () => {
+        diff = btn.dataset.diff;
+        diffButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateLeaderboard();
+      }
+    });
+
+    // Inisialisasi tampilan leaderboard
+    updateLeaderboard();
+  </script>
 </body>
 </html>

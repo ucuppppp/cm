@@ -1,145 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GG-Match</title>
-</head>
-<body>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+      }
+      .scoreboard {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .scoreboard span {
+        padding: 5px 10px;
+        font-weight: bold;
+        margin: 20px;
+      }
+      #score1 {
+        background-color: blue;
+        color: white;
+      }
+      #score2 {
+        background-color: red;
+        color: white;
+      }
+      #score1.active,
+      #score2.active {
+        border: solid 5px black;
+      }
+      .game {
+        display: grid;
+        grid-template-columns: repeat(6, 95px);
+        grid-template-rows: repeat(5, 95px);
+        justify-content: center;
+        align-items: center;
+        grid-gap: 5px;
+      }
+      .card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #ccc;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform-style: preserve-3d;
+        transition: transform 0.5s;
+      }
+      .card.flipped {
+        transform: rotateY(180deg);
+      }
+      .cardFace {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .cardFront {
+        background-color: #333;
+        color: white;
+      }
+      .cardBack {
+        background-color: #eee;
+        transform: rotateY(180deg);
+      }
+    </style>
+  </head>
+  <body>
     <div class="scoreboard">
-        <div id="score1"></div>
-        <div id="score2"></div>
+      <span id="score1"></span>
+      <span id="score2"></span>
     </div>
     <div class="game" id="game"></div>
     <script>
         const player1 = localStorage.getItem('player1name'),
-              player2 = localStorage.getItem('player2name')
-        const twoPlayers = !!player2
-        let score1 = parseInt(localStorage.getItem('player1score')) || 0
-        let score2 = twoPlayers 
-                    ? parseInt(localStorage.getItem('player2score')) || 0
-                    : parseInt(localStorage.getItem('botScore')) || 0
-
+              player2 = localStorage.getItem('player2name'),
+              twoPlayers = !!player2
         let isHumanTurn = true
         let currentPlayer = 1
         let matchesFound = 0
 
+        let score1 = parseInt(localStorage.getItem('player1score')) || 0,
+            score2 = twoPlayers 
+            ? parseInt(localStorage.getItem('player2score')) || 0
+            : parseInt(localStorage.getItem('botScore')) || 0
+
         const flipSound = new Audio; flipSound.src='/assets/flip.mp3'
         const matchSound = new Audio; matchSound.src='/assets/match.mp3'
-        const nomatchSound = new Audio; nomatchSound.src='/assets/nomatch.mp3'
+        const nomatch = new Audio; nomatch.src='/assets/nomatch.mp3'
 
         const score1El = document.getElementById('score1')
         const score2El = document.getElementById('score2')
 
         function updateScoreboard(){
-            score1El.textContent = player1+': '+score1;
-            score2El.textContent = (twoPlayers ? player2 : 'Bot')+': '+score2;
-            if(twoPlayers){
-                if(currentPlayer === 1){
-                    score1El.classList.add('active')
-                    score2El.classList.remove('active')
-                }else{
-                    score2El.classList.add('active')
-                    score1El.classList.remove('active')
-                }
+          score1El.textContent = player1+': '+score1
+          score2El.textContent = (twoPlayers ? player2 : 'Bot') + ': '+ score2
+          if(twoPlayers){
+            if(currentPlayer === 1){
+              score1El.classList.add('active')
+              score2El.classList.remove('active')
             }else{
-                if(isHumanTurn){
-                    score1El.classList.add('active')
-                    score2El.classList.remove('active')
-                }else{
-                    score2El.classList.add('active')
-                    score1El.classList.remove('active')
-                }
+              score1El.classList.add('active')
+              score2El.classList.remove('active')
             }
+          }else{
+            if(isHumanTurn){
+              score1El.classList.add('active')
+              score2El.classList.remove('active')
+            }else{
+              score2El.classList.add('active')
+              score1El.classList.remove('active')
+            }
+          }
         }
 
         updateScoreboard()
 
-        const emojis=['😀','😁','🤣','😂','😃','😄','😅','😆','😉','😊','😋','😎','😍','😘','🥰']
-        const cardsData = [...emojis, ...emojis].sort(() => Math.random() - 0.5)
         const gameEl = document.getElementById('game')
-        let firstCard=null,secondCard=null,lock=false
-
         function createCard(emoji){
-            const card = document.createElement('div')
-            card.className='card'
-            card.dataset.emoji=emoji
-            const front = document.createElement('div')
-            const back = document.createElement('div')
-            front.className='cardFace cardFront'
-            back.className='cardFace cardBack'
-            front.textContent='?'
-            back.textContent=emoji;
-            card.appendChild(front)
-            card.appendChild(back)
-            card.addEventListener('click', onCardClick)
-            return card;
+          const card = document.createElement('div')
+          card.className='card'
+          card.dataset.emoji = emoji
+          const front = document.createElement('div')
+          const back = document.createElement('div')
+          front.className='cardFace cardFront'
+          front.textContent='?'
+          back.className='cardFace cardBack'
+          front.textContent=emoji
+          card.appendChild(front)
+          card.appendChild(back)
+          card.addEventListener('click', onCardClick)
+          return card
         }
+
+        const emojis = ['😀','😁','😂','🤣','😄','😅','😆','😉','😊','😋','😎','😍','😘','🥰','🤩']
+        const cardsData = [...emojis,...emojis]
 
         cardsData.forEach(e => gameEl.appendChild(createCard(e)))
 
+        let firstCard = null
+        let secondCard = null
+        let lock = null
+
         function onCardClick(){
-            if(lock || (!twoPlayers && !isHumanTurn)) return;
-            if(this.classList.contains('flipped')) return;
-            flipCard(this)
-            if(!firstCard) {firstCard=this; return}
-            secondCard=this
-            lock=true
-            setTimeout(checkMatch, 500)
+          if(lock && !isHumanTurn) return
+          if(this.classList.contains('flipped')) return
+          flipcard(this)
+          if(!firstCard){firstCard=this;return}
+          secondCard=this
+          lock=true
+          setTimeout(checkMatch, 500)
         }
 
-        function flipCard(card){
-            card.classList.add('flipped')
-            flipSound.play()
-        }
-        function unflipCard(card){
-            card.classList.remove('flipped')
-            flipSound.play()
-        }
         function resetSelection(){firstCard=null;secondCard=null;lock=false}
 
-        function checkMatch(){
-            if(firstCard.dataset.emoji === secondCard.dataset.emoji){
-                matchSound.play()
-                if(twoPlayers){
-                    if(currentPlayer === 1){
-                        score1++
-                    localStorage.setItem('player1score', score1)
-                    }else{
-                        score2++
-                    localStorage.setItem('player2score', score2)
-                    }
-                }else{
-                    if(isHumanTurn){
-                        score1++
-                    localStorage.setItem('player1score', score1)
-                    }else{
-                        score2++
-                        localStorage.setItem('botScore', score2)
-                    }
-                }
-                updateScoreboard()
-                matchesFound++
-                firstCard.removeEventListener('click', onCardClick)
-                secondCard.removeEventListener('click', onCardClick)
-                resetSelection()
-                if(document.querySelectorAll('.card.flipped') === cardsData.length){
-                    setTimeout(endGame, 1000)
-                }
-                lock=false
-            }else{
-                nomatchSound.play()
-                setTimeout(() => {
-                    unflipCard(firstCard)
-                    unflipCard(secondCard)
-                    if(!twoPlayers && localStorage.getItem('botDiff') === 'hard'){
-                        if(isHumanTurn){}
-                    }
+        function flipCard(e){
+          e.classList.add('flipped')
+          flipSound.play()
+        }
 
-                }, 600);
+        function unflipCard(e){
+          e.classList.remove('flipped')
+          flipSound.play()
+        }
+
+        function checkMatch(){
+          if(firstCard.dataset.emoji === secondCard.dataset.emoji){
+            if(twoPlayers){
+              if(currentPlayer === 1){
+                score1++
+                localStorage.setItem('player1score')
+              }else{
+                score2++
+                localStorage.setItem('player2score')
+              }
             }
+          }
         }
 
     </script>
-</body>
+  </body>
 </html>
